@@ -1,0 +1,4 @@
+app:
+  host: "localhost"
+  grpc_port: "50051"
+  grpc_protocol: "tcp"
