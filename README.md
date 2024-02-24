@@ -1,7 +1,9 @@
 <img src="https://github.com/allan7yin/grpc-go/assets/66652405/4ea42bce-c7a4-4d4c-b381-6b056e93078b" alt="What is gRPC" width="400" />
 
 # gRPC 
-This is a quick spinup of a gRPC client and server in Go. It includes examples of different types of RPCs including Unary, Server Streaming, Client Streaming, and Bidirectional Streaming.
+This is a quick spinup of a gRPC client and server in Go. It includes examples of different types of RPCs including Unary, Server Streaming, Client Streaming, and Bidirectional Streaming. This project setups a quick Postgres database with a GORM connection, and the client makes requests to the server for user actions. 
+
+Project structure follows the [commuity-recommended guidlines](https://github.com/golang-standards/project-layout). I also used Makefiles for cleaner code and to reduce the need to run `protoc` for every protocol buffer change.
 
 ## Features
 - Unary RPCs where the client sends a single request to the server and gets a single response back.
