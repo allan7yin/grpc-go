@@ -1,3 +1,5 @@
+<img src="https://github.com/allan7yin/grpc-go/assets/66652405/4ea42bce-c7a4-4d4c-b381-6b056e93078b" alt="What is gRPC" width="400" />
+
 # gRPC 
 This is a quick spinup of a gRPC client and server in Go. It includes examples of different types of RPCs including Unary, Server Streaming, Client Streaming, and Bidirectional Streaming.
 
