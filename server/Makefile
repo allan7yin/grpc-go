@@ -1,6 +1,6 @@
 .PHONY: generate
 generate:
-	cd api; buf generate
+	cd proto; buf generate
 
 .PHONY: run
 run:
