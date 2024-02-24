@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strconv"
+
 	"github.com/allan7yin/grpc-go/internal/models"
 	interfaces "github.com/allan7yin/grpc-go/pkg/v1"
 	"gorm.io/gorm"
@@ -28,10 +30,15 @@ func (repo *Repo) Create(user models.User) (models.User, error) {
 // This function returns the user instance which is
 // saved on the DB and returns to the usecase
 func (repo *Repo) Get(id string) (models.User, error) {
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		// Handle error if the string is not a valid integer
+		panic(err)
+	}
 	var user models.User
-	err := repo.db.Where("id = ?", id).First(&user).Error
+	er := repo.db.Where("id = ?", intId).First(&user).Error
 
-	return user, err
+	return user, er
 }
 
 // Update
@@ -53,7 +60,9 @@ func (repo *Repo) Update(user models.User) error {
 //
 // This function creates a the User whose ID was supplied as the argument
 func (repo *Repo) Delete(id string) error {
-	err := repo.db.Where("id = ?", id).Delete(&models.User{}).Error
+	err := repo.db.Unscoped().Where("id = ?", id).Delete(&models.User{}).Error
+	//.Unscoped deletes from db. Simply using .Delete without this provides the row with a `deleted_at`
+	// NEXT: Instead of hard deletes, soft delete and consider moving to `deleted users` table
 
 	return err
 }

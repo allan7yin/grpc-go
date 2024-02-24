@@ -9,7 +9,7 @@ import (
 
 func DbConnect() *gorm.DB {
 	db, err := gorm.Open(
-		postgres.Open("host=localhost dbname=gp-rpc-db password=password port=5432"), &gorm.Config{},
+		postgres.Open("host=localhost user=allanyin dbname=goRpcDb password=password port=5432"), &gorm.Config{},
 	)
 	if err != nil {
 		log.Fatalf("There was error connecting to the database: %v", err)

@@ -42,7 +42,7 @@ func (srv *UserServStruct) Create(ctx context.Context, req *pb.CreateUserRequest
 //
 // This function returns the user instance of which ID
 // is supplied through the SingleUserRequest message field of proto
-func (srv *UserServStruct) Get(ctx context.Context, req *pb.SingleUserRequest) (*pb.UserProfileResponse, error) {
+func (srv *UserServStruct) Read(ctx context.Context, req *pb.SingleUserRequest) (*pb.UserProfileResponse, error) {
 	id := req.GetId()
 	if id == "" {
 		return &pb.UserProfileResponse{}, errors.New("id cannot be blank")
@@ -52,6 +52,21 @@ func (srv *UserServStruct) Get(ctx context.Context, req *pb.SingleUserRequest) (
 		return &pb.UserProfileResponse{}, err
 	}
 	return srv.transformUserModel(user), nil
+}
+
+// Delete
+//
+// This function deletes the user, returning a success message if successful
+// is supplied through the SingleUserRequest message field of proto
+func (srv *UserServStruct) Delete(ctx context.Context, req *pb.SingleUserRequest) (*pb.SuccessResponse, error) {
+	id := req.GetId()
+	if id == "" {
+		return &pb.SuccessResponse{}, errors.New("id cannot be blank")
+	}
+	if err := srv.useCase.Delete(id); err != nil {
+		return &pb.SuccessResponse{Response: "0"}, err
+	}
+	return &pb.SuccessResponse{Response: "1"}, nil
 }
 
 func (srv *UserServStruct) transformUserRPC(req *pb.CreateUserRequest) models.User {

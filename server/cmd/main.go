@@ -30,19 +30,17 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	// MUST INITIALIZE THIS BEFORE WE grpcServer.Serve
 	grpcServer := grpc.NewServer()
+	userUseCase := initUserServer(db)
+	handler.NewServer(grpcServer, userUseCase)
 
 	fmt.Println("Server is running on port:", srvConf.GrpcPort)
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
-	userUseCase := initUserServer(db)
-	handler.NewServer(grpcServer, userUseCase)
-
 	// start serving to the address
 	log.Fatal(grpcServer.Serve(listener))
-
 }
 
 func initUserServer(db *gorm.DB) interfaces.UseCaseInterface {
