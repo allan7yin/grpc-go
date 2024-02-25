@@ -33,4 +33,7 @@ type UseCaseInterface interface {
 
 	// Deletes the user whose ID is supplied
 	Delete(id string) error
+
+	// retrieves list of users
+	ReadMultiUsers(ids []string) ([]models.User, error)
 }

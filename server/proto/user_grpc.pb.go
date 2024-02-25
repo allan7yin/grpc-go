@@ -19,20 +19,31 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	UserService_Create_FullMethodName = "/user.UserService/Create"
-	UserService_Read_FullMethodName   = "/user.UserService/Read"
-	UserService_Update_FullMethodName = "/user.UserService/Update"
-	UserService_Delete_FullMethodName = "/user.UserService/Delete"
+	UserService_Create_FullMethodName              = "/user.UserService/Create"
+	UserService_Read_FullMethodName                = "/user.UserService/Read"
+	UserService_Update_FullMethodName              = "/user.UserService/Update"
+	UserService_Delete_FullMethodName              = "/user.UserService/Delete"
+	UserService_ReadMultiUsers_FullMethodName      = "/user.UserService/ReadMultiUsers"
+	UserService_MultiUpdate_FullMethodName         = "/user.UserService/MultiUpdate"
+	UserService_CreateUsersOneByOne_FullMethodName = "/user.UserService/CreateUsersOneByOne"
 )
 
 // UserServiceClient is the client API for UserService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
+	// rpc unary
 	Create(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error)
 	Read(ctx context.Context, in *SingleUserRequest, opts ...grpc.CallOption) (*UserProfileResponse, error)
 	Update(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Delete(ctx context.Context, in *SingleUserRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	// rpc server-side streaming
+	ReadMultiUsers(ctx context.Context, in *MultiUsersRequest, opts ...grpc.CallOption) (UserService_ReadMultiUsersClient, error)
+	// rpc client-side streaming
+	MultiUpdate(ctx context.Context, opts ...grpc.CallOption) (UserService_MultiUpdateClient, error)
+	// rpc bidirectional streaming
+	// for practce, this will be, stream of user creation requests, and response of stream of users (impractical, for learning purpose)
+	CreateUsersOneByOne(ctx context.Context, opts ...grpc.CallOption) (UserService_CreateUsersOneByOneClient, error)
 }
 
 type userServiceClient struct {
@@ -79,14 +90,119 @@ func (c *userServiceClient) Delete(ctx context.Context, in *SingleUserRequest, o
 	return out, nil
 }
 
+func (c *userServiceClient) ReadMultiUsers(ctx context.Context, in *MultiUsersRequest, opts ...grpc.CallOption) (UserService_ReadMultiUsersClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UserService_ServiceDesc.Streams[0], UserService_ReadMultiUsers_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &userServiceReadMultiUsersClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type UserService_ReadMultiUsersClient interface {
+	Recv() (*UserProfileResponse, error)
+	grpc.ClientStream
+}
+
+type userServiceReadMultiUsersClient struct {
+	grpc.ClientStream
+}
+
+func (x *userServiceReadMultiUsersClient) Recv() (*UserProfileResponse, error) {
+	m := new(UserProfileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *userServiceClient) MultiUpdate(ctx context.Context, opts ...grpc.CallOption) (UserService_MultiUpdateClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UserService_ServiceDesc.Streams[1], UserService_MultiUpdate_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &userServiceMultiUpdateClient{stream}
+	return x, nil
+}
+
+type UserService_MultiUpdateClient interface {
+	Send(*UpdateUserRequest) error
+	CloseAndRecv() (*SuccessResponse, error)
+	grpc.ClientStream
+}
+
+type userServiceMultiUpdateClient struct {
+	grpc.ClientStream
+}
+
+func (x *userServiceMultiUpdateClient) Send(m *UpdateUserRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *userServiceMultiUpdateClient) CloseAndRecv() (*SuccessResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(SuccessResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *userServiceClient) CreateUsersOneByOne(ctx context.Context, opts ...grpc.CallOption) (UserService_CreateUsersOneByOneClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UserService_ServiceDesc.Streams[2], UserService_CreateUsersOneByOne_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &userServiceCreateUsersOneByOneClient{stream}
+	return x, nil
+}
+
+type UserService_CreateUsersOneByOneClient interface {
+	Send(*CreateUserRequest) error
+	Recv() (*UserProfileResponse, error)
+	grpc.ClientStream
+}
+
+type userServiceCreateUsersOneByOneClient struct {
+	grpc.ClientStream
+}
+
+func (x *userServiceCreateUsersOneByOneClient) Send(m *CreateUserRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *userServiceCreateUsersOneByOneClient) Recv() (*UserProfileResponse, error) {
+	m := new(UserProfileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
 type UserServiceServer interface {
+	// rpc unary
 	Create(context.Context, *CreateUserRequest) (*UserProfileResponse, error)
 	Read(context.Context, *SingleUserRequest) (*UserProfileResponse, error)
 	Update(context.Context, *UpdateUserRequest) (*SuccessResponse, error)
 	Delete(context.Context, *SingleUserRequest) (*SuccessResponse, error)
+	// rpc server-side streaming
+	ReadMultiUsers(*MultiUsersRequest, UserService_ReadMultiUsersServer) error
+	// rpc client-side streaming
+	MultiUpdate(UserService_MultiUpdateServer) error
+	// rpc bidirectional streaming
+	// for practce, this will be, stream of user creation requests, and response of stream of users (impractical, for learning purpose)
+	CreateUsersOneByOne(UserService_CreateUsersOneByOneServer) error
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -105,6 +221,15 @@ func (UnimplementedUserServiceServer) Update(context.Context, *UpdateUserRequest
 }
 func (UnimplementedUserServiceServer) Delete(context.Context, *SingleUserRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedUserServiceServer) ReadMultiUsers(*MultiUsersRequest, UserService_ReadMultiUsersServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReadMultiUsers not implemented")
+}
+func (UnimplementedUserServiceServer) MultiUpdate(UserService_MultiUpdateServer) error {
+	return status.Errorf(codes.Unimplemented, "method MultiUpdate not implemented")
+}
+func (UnimplementedUserServiceServer) CreateUsersOneByOne(UserService_CreateUsersOneByOneServer) error {
+	return status.Errorf(codes.Unimplemented, "method CreateUsersOneByOne not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -191,6 +316,79 @@ func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ReadMultiUsers_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(MultiUsersRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(UserServiceServer).ReadMultiUsers(m, &userServiceReadMultiUsersServer{stream})
+}
+
+type UserService_ReadMultiUsersServer interface {
+	Send(*UserProfileResponse) error
+	grpc.ServerStream
+}
+
+type userServiceReadMultiUsersServer struct {
+	grpc.ServerStream
+}
+
+func (x *userServiceReadMultiUsersServer) Send(m *UserProfileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _UserService_MultiUpdate_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(UserServiceServer).MultiUpdate(&userServiceMultiUpdateServer{stream})
+}
+
+type UserService_MultiUpdateServer interface {
+	SendAndClose(*SuccessResponse) error
+	Recv() (*UpdateUserRequest, error)
+	grpc.ServerStream
+}
+
+type userServiceMultiUpdateServer struct {
+	grpc.ServerStream
+}
+
+func (x *userServiceMultiUpdateServer) SendAndClose(m *SuccessResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *userServiceMultiUpdateServer) Recv() (*UpdateUserRequest, error) {
+	m := new(UpdateUserRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _UserService_CreateUsersOneByOne_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(UserServiceServer).CreateUsersOneByOne(&userServiceCreateUsersOneByOneServer{stream})
+}
+
+type UserService_CreateUsersOneByOneServer interface {
+	Send(*UserProfileResponse) error
+	Recv() (*CreateUserRequest, error)
+	grpc.ServerStream
+}
+
+type userServiceCreateUsersOneByOneServer struct {
+	grpc.ServerStream
+}
+
+func (x *userServiceCreateUsersOneByOneServer) Send(m *UserProfileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *userServiceCreateUsersOneByOneServer) Recv() (*CreateUserRequest, error) {
+	m := new(CreateUserRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -215,6 +413,23 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_Delete_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ReadMultiUsers",
+			Handler:       _UserService_ReadMultiUsers_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "MultiUpdate",
+			Handler:       _UserService_MultiUpdate_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "CreateUsersOneByOne",
+			Handler:       _UserService_CreateUsersOneByOne_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "user.proto",
 }

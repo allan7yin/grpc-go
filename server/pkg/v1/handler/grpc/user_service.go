@@ -3,7 +3,9 @@ package grpc
 import (
 	"context"
 	"errors"
+	"log"
 	"strconv"
+	"time"
 
 	"github.com/allan7yin/grpc-go/internal/models"
 	interfaces "github.com/allan7yin/grpc-go/pkg/v1"
@@ -67,6 +69,29 @@ func (srv *UserServStruct) Delete(ctx context.Context, req *pb.SingleUserRequest
 		return &pb.SuccessResponse{Response: "0"}, err
 	}
 	return &pb.SuccessResponse{Response: "1"}, nil
+}
+
+// GetUsersOneByOne
+func (srv *UserServStruct) ReadMultiUsers(req *pb.MultiUsersRequest, stream pb.UserService_ReadMultiUsersServer) error {
+	log.Println("Fetch data streaming")
+	ids := req.GetId()
+
+	// retrieve all users
+	users, err := srv.useCase.ReadMultiUsers(ids)
+	if err != nil {
+		log.Printf("Error: Failed to retrieve users with the ids: %v", ids)
+		return err
+	}
+
+	// return users one by one -> mock a server-stream situation
+	for _, user := range users {
+		if err := stream.Send(srv.transformUserModel(user)); err != nil {
+			log.Printf("Error: Failed to send over stream with error: %v", err)
+			return err
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return nil
 }
 
 func (srv *UserServStruct) transformUserRPC(req *pb.CreateUserRequest) models.User {

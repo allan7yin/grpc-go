@@ -89,7 +89,7 @@ func (uc *UseCase) Update(updateUser models.User) error {
 func (uc *UseCase) Delete(id string) error {
 	var err error
 	// check if user exists
-	if _, err = uc.Get(id); err != nil {
+	if _, err = uc.repo.Get(id); err != nil {
 		return err
 	}
 
@@ -100,4 +100,17 @@ func (uc *UseCase) Delete(id string) error {
 	}
 
 	return nil
+}
+
+// ReadMultiUsers
+func (uc *UseCase) ReadMultiUsers(ids []string) ([]models.User, error) {
+	var users []models.User
+	for _, id := range ids {
+		if user, err := uc.Get(id); err != nil {
+			return []models.User{}, err
+		} else {
+			users = append(users, user)
+		}
+	}
+	return users, nil
 }

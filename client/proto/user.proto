@@ -3,10 +3,21 @@ package user;
 option go_package = "./proto";
 
 service UserService {
+  // rpc unary 
   rpc Create(CreateUserRequest) returns (UserProfileResponse);
   rpc Read(SingleUserRequest) returns (UserProfileResponse);
   rpc Update(UpdateUserRequest) returns (SuccessResponse);
   rpc Delete(SingleUserRequest) returns (SuccessResponse);
+
+  // rpc server-side streaming
+  rpc ReadMultiUsers(MultiUsersRequest) returns (stream UserProfileResponse);
+
+  // rpc client-side streaming 
+  rpc MultiUpdate(stream UpdateUserRequest) returns (SuccessResponse);
+
+  // rpc bidirectional streaming 
+  // for practce, this will be, stream of user creation requests, and response of stream of users (impractical, for learning purpose)
+  rpc CreateUsersOneByOne(stream CreateUserRequest) returns (stream UserProfileResponse);
 }
 
 message CreateUserRequest{
@@ -16,6 +27,10 @@ message CreateUserRequest{
 
 message SingleUserRequest{
   string id = 1;
+}
+
+message MultiUsersRequest {
+  repeated string id = 1;
 }
 
 message UserProfileResponse{

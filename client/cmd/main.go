@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 
 	pb "github.com/allan7yin/grpc-go-client/proto"
@@ -14,9 +15,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error: Failed to connect: %v", err)
 	}
-	// defer conn.Close()
+	defer conn.Close()
 	log.Printf("Connected to grpc server")
 	client := pb.NewUserServiceClient(conn)
+
+	/* //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	#  Unary
+	#
+	*/ //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Let's test our grpc server and client by making a user, and then retreiving the created user
 	createUserRequest := &pb.CreateUserRequest{
@@ -50,5 +56,27 @@ func main() {
 		log.Fatalf("Error: Failed to delete user, error: %v", err)
 	} else {
 		log.Printf("Deleted single user, respone code: %v", response)
+	}
+
+	/* //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	#  Server-side streaming
+	#
+	*/ //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	readMultiUsersRequest := &pb.MultiUsersRequest{}
+	readMultiUsersRequest.Id = append(readMultiUsersRequest.Id, "1", "7", "34", "42")
+	if stream, err := client.ReadMultiUsers(context.Background(), readMultiUsersRequest); err != nil {
+		log.Fatalf("Error: Failed to retrieve uers, error: %v", err)
+	} else {
+		for {
+			message, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalf("error while streaming %v", err)
+			}
+			log.Println(message)
+		}
 	}
 }
